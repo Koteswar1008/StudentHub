@@ -47,7 +47,8 @@ export function LaundryBooking() {
   const [machines] = useState<LaundryMachine[]>(sampleMachines);
   const [selectedMachineId, setSelectedMachineId] = useState<string>(sampleMachines[0].id);
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date())); // Default to today
-  const [bookings, setBookings] = useLocalStorage<LaundrySlot[]>('laundryBookings', []);
+  const initialBookings = useMemo(() => [], []);
+  const [bookings, setBookings] = useLocalStorage<LaundrySlot[]>('laundryBookings', initialBookings);
   const { toast } = useToast();
   const [userName, setUserName] = useState<string>("Current User"); // Default for server render
   const [clientReady, setClientReady] = useState(false);
@@ -58,7 +59,6 @@ export function LaundryBooking() {
     if (storedUser) {
         setUserName(storedUser);
     }
-    // Removed prompt to avoid hydration issues. User name can be set in Settings.
   }, []);
 
   const dailySlots = useMemo(() => {
