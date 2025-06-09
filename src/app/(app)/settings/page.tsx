@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -5,9 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Settings as SettingsIcon } from "lucide-react";
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Settings - Student Hub',
-};
+// Note: Metadata export will be ignored in Client Components.
+// Consider moving metadata to a layout.tsx file if it needs to be dynamic
+// or keep it static here if it's acceptable for it to not be strictly enforced.
+// For now, we'll leave it as is, but be aware of this Next.js behavior.
+// export const metadata: Metadata = { 
+//   title: 'Settings - Student Hub',
+// };
+
 
 export default function SettingsPage() {
   // Basic form for user name, could be expanded
