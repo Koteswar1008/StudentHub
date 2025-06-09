@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { PlusCircle, Trash2, Edit3, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Trash2, Edit3, AlertTriangle, BookOpen } from 'lucide-react';
 import type { Assignment } from '@/lib/types';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { format, differenceInDays, parseISO, isPast } from 'date-fns';
