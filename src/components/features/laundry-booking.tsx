@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -48,29 +49,24 @@ export function LaundryBooking() {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date())); // Default to today
   const [bookings, setBookings] = useLocalStorage<LaundrySlot[]>('laundryBookings', []);
   const { toast } = useToast();
-  const [userName, setUserName] = useState<string>("Current User"); // Placeholder for actual user
+  const [userName, setUserName] = useState<string>("Current User"); // Default for server render
+  const [clientReady, setClientReady] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching user name or ID
-    // In a real app, this would come from an auth context
+    setClientReady(true);
     const storedUser = window.localStorage.getItem("studentHubUserName");
     if (storedUser) {
         setUserName(storedUser);
-    } else {
-        // Simple prompt for demo, replace with actual auth
-        const name = prompt("Enter your name for booking:");
-        if (name) {
-            setUserName(name);
-            window.localStorage.setItem("studentHubUserName", name);
-        }
     }
+    // Removed prompt to avoid hydration issues. User name can be set in Settings.
   }, []);
 
   const dailySlots = useMemo(() => {
     const generated = generateSlotsForDay(selectedMachineId, selectedDate);
-    // Merge with existing bookings
+    // Merge with existing bookings. This is safe as `bookings` from useLocalStorage
+    // will be initialValue on server and first client render, then update.
     return generated.map(slot => {
-      const existingBooking = bookings.find(b => 
+      const existingBooking = bookings.find(b =>
         b.machineId === selectedMachineId &&
         parseISO(b.startTime).getTime() === parseISO(slot.startTime).getTime() &&
         isSameDay(parseISO(b.startTime), selectedDate)
@@ -81,14 +77,13 @@ export function LaundryBooking() {
 
   const handleBookSlot = (slotId: string) => {
     const slotToBook = dailySlots.find(s => s.id === slotId);
-    if (!slotToBook || slotToBook.isBooked || isPast(parseISO(slotToBook.startTime))) {
+    if (!clientReady || !slotToBook || slotToBook.isBooked || isPast(parseISO(slotToBook.startTime))) {
       toast({ title: "Booking Failed", description: "Slot is unavailable or in the past.", variant: "destructive" });
       return;
     }
-    
-    // Check if user already has a booking for this day (optional rule)
-    const userHasBookingToday = bookings.some(b => 
-      b.bookedBy === userName && 
+
+    const userHasBookingToday = bookings.some(b =>
+      b.bookedBy === userName &&
       isSameDay(parseISO(b.startTime), selectedDate)
     );
     if(userHasBookingToday) {
@@ -96,11 +91,9 @@ export function LaundryBooking() {
          return;
     }
 
+    const newBooking: LaundrySlot = { ...slotToBook, isBooked: true, bookedBy: userName, userId: userName };
 
-    const newBooking: LaundrySlot = { ...slotToBook, isBooked: true, bookedBy: userName, userId: userName }; // Use userName as userId for demo
-    
     setBookings(prev => {
-      // Remove any placeholder slot if it exists, then add new booking
       const filtered = prev.filter(b => !(b.machineId === newBooking.machineId && b.startTime === newBooking.startTime));
       return [...filtered, newBooking];
     });
@@ -114,7 +107,7 @@ export function LaundryBooking() {
 
   const handleCancelBooking = (bookingId: string) => {
      const bookingToCancel = bookings.find(b => b.id === bookingId);
-     if (!bookingToCancel || bookingToCancel.bookedBy !== userName) {
+     if (!clientReady || !bookingToCancel || bookingToCancel.bookedBy !== userName) {
          toast({ title: "Cancellation Failed", description: "You can only cancel your own bookings.", variant: "destructive" });
          return;
      }
@@ -130,7 +123,7 @@ export function LaundryBooking() {
       action: <XCircle className="text-red-500" />,
     });
   };
-  
+
   const selectedMachine = machines.find(m => m.id === selectedMachineId);
 
   return (
@@ -164,47 +157,54 @@ export function LaundryBooking() {
           <Info className="h-4 w-4" />
           <AlertTitle className="font-headline">Booking Information</AlertTitle>
           <AlertDescription>
-            You are booking as: <strong>{userName}</strong>. Each slot is 1 hour. Please be on time.
+            You are booking as: <strong>{clientReady ? userName : 'Current User'}</strong>. Each slot is 1 hour. Please be on time.
           </AlertDescription>
         </Alert>
-        
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {dailySlots.map(slot => (
-            <Card key={slot.id} className={`p-3 text-center transition-all duration-200 ${slot.isBooked ? 'bg-muted/70' : 'hover:shadow-md'}`}>
-              <div className="flex items-center justify-center mb-1">
-                <Clock className="h-5 w-5 mr-2 text-primary" />
-                <p className="font-semibold">{format(parseISO(slot.startTime), 'p')}</p>
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">
-                to {format(parseISO(slot.endTime), 'p')}
-              </p>
-              {slot.isBooked ? (
-                slot.bookedBy === userName ? (
-                <>
-                  <Badge variant="secondary" className="mb-2 w-full justify-center">Booked by You</Badge>
-                   <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => handleCancelBooking(slot.id)} disabled={isPast(addHours(parseISO(slot.startTime), -1))}>
-                    Cancel
-                  </Button>
-                </>
-                ) : (
+          {dailySlots.map(slot => {
+            const isSlotInPastClient = clientReady ? isPast(parseISO(slot.startTime)) : false;
+            const isBookedByCurrentUserClient = clientReady ? (slot.isBooked && slot.bookedBy === userName) : false;
+            const isSlotBookedByOtherClient = clientReady ? (slot.isBooked && slot.bookedBy !== userName) : false;
+
+            return (
+              <Card key={slot.id} className={`p-3 text-center transition-all duration-200 ${clientReady && slot.isBooked ? 'bg-muted/70' : 'hover:shadow-md'}`}>
+                <div className="flex items-center justify-center mb-1">
+                  <Clock className="h-5 w-5 mr-2 text-primary" />
+                  <p className="font-semibold">{format(parseISO(slot.startTime), 'p')}</p>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  to {format(parseISO(slot.endTime), 'p')}
+                </p>
+                {!clientReady ? (
+                  <Badge variant="outline" className="w-full justify-center">Loading...</Badge>
+                ) : isBookedByCurrentUserClient ? (
+                  <>
+                    <Badge variant="secondary" className="mb-2 w-full justify-center">Booked by You</Badge>
+                    <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => handleCancelBooking(slot.id)} disabled={isPast(addHours(parseISO(slot.startTime), -1))}>
+                      Cancel
+                    </Button>
+                  </>
+                ) : isSlotBookedByOtherClient ? (
                   <Badge variant="destructive" className="w-full justify-center">Booked</Badge>
-                )
-              ) : isPast(parseISO(slot.startTime)) ? (
-                <Badge variant="outline" className="w-full justify-center">Unavailable</Badge>
-              ) : (
-                <Button 
-                    size="sm" 
-                    className="w-full text-xs bg-accent hover:bg-accent/90 text-accent-foreground"
-                    onClick={() => handleBookSlot(slot.id)}
-                >
-                  Book Slot
-                </Button>
-              )}
-            </Card>
-          ))}
+                ) : isSlotInPastClient ? (
+                  <Badge variant="outline" className="w-full justify-center">Unavailable</Badge>
+                ) : (
+                  <Button
+                      size="sm"
+                      className="w-full text-xs bg-accent hover:bg-accent/90 text-accent-foreground"
+                      onClick={() => handleBookSlot(slot.id)}
+                  >
+                    Book Slot
+                  </Button>
+                )}
+              </Card>
+            );
+          })}
         </div>
         {dailySlots.length === 0 && <p className="text-muted-foreground text-center py-4">No slots available for this machine/day.</p>}
       </CardContent>
     </Card>
   );
 }
+
