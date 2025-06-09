@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { PlusCircle, Trash2, Edit3, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { PlusCircle, Trash2, Edit3, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react';
 import type { Expense } from '@/lib/types';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
@@ -20,7 +21,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 const expenseCategories = ["Food", "Transport", "Utilities", "Entertainment", "Shopping", "Education", "Health", "Other"];
 
 export function ExpenseTracker() {
-  const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
+  const initialExpenses = useMemo(() => [], []);
+  const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', initialExpenses);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentExpense, setCurrentExpense] = useState<Partial<Expense>>({});
   const [isEditing, setIsEditing] = useState(false);

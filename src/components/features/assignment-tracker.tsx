@@ -1,13 +1,14 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DatePicker } from "@/components/ui/date-picker"; // Assuming a DatePicker component exists
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +29,8 @@ const SimpleDatePicker = ({ date, onDateChange }: { date?: Date, onDateChange: (
 
 
 export function AssignmentTracker() {
-  const [assignments, setAssignments] = useLocalStorage<Assignment[]>('assignments', []);
+  const initialAssignments = useMemo(() => [], []);
+  const [assignments, setAssignments] = useLocalStorage<Assignment[]>('assignments', initialAssignments);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentAssignment, setCurrentAssignment] = useState<Partial<Assignment>>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -194,15 +196,3 @@ export function AssignmentTracker() {
     </Card>
   );
 }
-
-// Basic DatePicker component as a fallback if not available in ui components
-// or you can build one using Popover and Calendar from shadcn/ui
-// This is a simplified version and might need @radix-ui/react-popover and react-day-picker.
-// For this exercise, assuming a component like this exists or can be built.
-// Remove this if you have a DatePicker component in your ui folder.
-// Using a placeholder for now if actual component does not exist.
-// It is likely that `components/ui/date-picker.tsx` would use `Calendar` and `Popover`.
-// For now, this basic input type date will work, but it's not styled like shadcn.
-// To use shadcn's Calendar, you'd typically wrap it in a Popover.
-// Using a basic HTML date input for simplicity if no ui/date-picker.tsx is provided.
-// Update: Let's create a ui/date-picker.tsx based on shadcn examples.
