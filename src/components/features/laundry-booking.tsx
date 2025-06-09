@@ -12,6 +12,7 @@ import useLocalStorage from '@/hooks/use-local-storage';
 import { format, addHours, setHours, setMinutes, setSeconds, setMilliseconds, isSameDay, isPast, parseISO, addDays, startOfDay } from 'date-fns';
 import { CalendarDays, Clock, CheckCircle, XCircle, ShoppingBasket, Info } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 const sampleMachines: LaundryMachine[] = [
   { id: 'machine1', name: 'Washer A', location: 'Hostel Block 1' },
