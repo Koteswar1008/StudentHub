@@ -1,32 +1,22 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DatePicker } from "@/components/ui/date-picker"; // Use this directly
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { PlusCircle, Trash2, Edit3, AlertTriangle, BookOpen } from 'lucide-react';
+import { PlusCircle, Trash2, Edit3, AlertTriangle, BookOpenCheck } from 'lucide-react'; // Changed BookOpen to BookOpenCheck
 import type { Assignment } from '@/lib/types';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { format, differenceInDays, parseISO, isPast } from 'date-fns';
-
-// A simple DatePicker if not provided by shadcn/ui (or use a popover with Calendar)
-const SimpleDatePicker = ({ date, onDateChange }: { date?: Date, onDateChange: (date?: Date) => void }) => {
-  const [day, setDay] = useState<Date | undefined>(date);
-  useEffect(() => {
-    onDateChange(day);
-  }, [day, onDateChange]);
-  return <DatePicker date={day} onDateChange={setDay} />;
-};
-
 
 export function AssignmentTracker() {
   const initialAssignments = useMemo(() => [], []);
@@ -35,35 +25,38 @@ export function AssignmentTracker() {
   const [currentAssignment, setCurrentAssignment] = useState<Partial<Assignment>>({});
   const [isEditing, setIsEditing] = useState(false);
 
-  const defaultNewAssignment: Partial<Assignment> = {
-    title: '',
-    subject: '',
-    dueDate: new Date().toISOString(),
-    description: '',
-    isCompleted: false,
-  };
-
-  const handleOpenForm = (assignment?: Assignment) => {
+  const handleOpenForm = useCallback((assignment?: Assignment) => {
     if (assignment) {
-      setCurrentAssignment({ ...assignment, dueDate: assignment.dueDate ? format(parseISO(assignment.dueDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx") : new Date().toISOString()});
+      setCurrentAssignment({ 
+        ...assignment, 
+        dueDate: assignment.dueDate 
+          ? format(parseISO(assignment.dueDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx") 
+          : new Date().toISOString() 
+      });
       setIsEditing(true);
     } else {
-      setCurrentAssignment(defaultNewAssignment);
+      setCurrentAssignment({
+        title: '',
+        subject: '',
+        dueDate: new Date().toISOString(),
+        description: '',
+        isCompleted: false,
+      });
       setIsEditing(false);
     }
     setIsFormOpen(true);
-  };
+  }, [setCurrentAssignment, setIsEditing, setIsFormOpen]);
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleFormChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setCurrentAssignment(prev => ({ ...prev, [name]: value }));
-  };
+  }, [setCurrentAssignment]);
 
-  const handleDateChange = (date?: Date) => {
+  const handleDateChange = useCallback((date?: Date) => {
     setCurrentAssignment(prev => ({ ...prev, dueDate: date?.toISOString() }));
-  };
+  }, [setCurrentAssignment]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!currentAssignment.title || !currentAssignment.subject || !currentAssignment.dueDate) return;
 
@@ -73,9 +66,9 @@ export function AssignmentTracker() {
       setAssignments(prev => [...prev, { ...currentAssignment, id: uuidv4(), isCompleted: false } as Assignment]);
     }
     setIsFormOpen(false);
-    setCurrentAssignment({});
+    setCurrentAssignment({}); // Reset current assignment
     setIsEditing(false);
-  };
+  }, [currentAssignment, isEditing, setAssignments, setIsFormOpen, setCurrentAssignment, setIsEditing]);
 
   const toggleComplete = (id: string) => {
     setAssignments(prev => prev.map(a => a.id === id ? { ...a, isCompleted: !a.isCompleted } : a));
@@ -94,9 +87,10 @@ export function AssignmentTracker() {
     return <Badge variant="outline">Due in {daysLeft} days</Badge>;
   };
   
-  const sortedAssignments = [...assignments].sort((a, b) => 
-    a.isCompleted === b.isCompleted ? differenceInDays(parseISO(a.dueDate), parseISO(b.dueDate)) : a.isCompleted ? 1 : -1
-  );
+  const sortedAssignments = useMemo(() => 
+    [...assignments].sort((a, b) => 
+      a.isCompleted === b.isCompleted ? differenceInDays(parseISO(a.dueDate), parseISO(b.dueDate)) : a.isCompleted ? 1 : -1
+  ), [assignments]);
 
   return (
     <Card>
@@ -126,7 +120,7 @@ export function AssignmentTracker() {
               </div>
               <div>
                 <Label htmlFor="dueDate">Due Date</Label>
-                <SimpleDatePicker 
+                <DatePicker 
                   date={currentAssignment.dueDate ? parseISO(currentAssignment.dueDate) : new Date()} 
                   onDateChange={handleDateChange}
                 />
@@ -148,7 +142,7 @@ export function AssignmentTracker() {
       <CardContent>
         {assignments.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            <BookOpen className="mx-auto h-12 w-12 mb-2" />
+            <BookOpenCheck className="mx-auto h-12 w-12 mb-2" /> {/* Changed Icon */}
             <p>No assignments yet. Add one to get started!</p>
           </div>
         ) : (
@@ -196,3 +190,5 @@ export function AssignmentTracker() {
     </Card>
   );
 }
+
+  
