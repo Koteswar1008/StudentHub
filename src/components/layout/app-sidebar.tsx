@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react"; // Added React import for useMemo
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, CalendarDays, Utensils, BookOpen, Wallet, ShoppingBasket, Settings, Sun, Moon, LayoutDashboard } from "lucide-react";
@@ -14,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
-} from "@/components/ui/sidebar"; // Assuming sidebar components are structured like this
+} from "@/components/ui/sidebar";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,6 +29,15 @@ const navItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   // const { theme, setTheme } = useTheme(); // Add useTheme if implementing theme toggle
+
+  const settingsTooltipProps = React.useMemo(
+    () => ({
+      children: "Settings",
+      side: "right" as const,
+      className: "font-body",
+    }),
+    [] // Empty dependency array means it's created once
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -45,20 +55,31 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="flex-1 overflow-y-auto">
         <SidebarMenu>
-          {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
-                tooltip={{ children: item.label, side: "right", className: "font-body" }}
-              >
-                <Link href={item.href}>
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {navItems.map((item) => {
+            const tooltipProps = React.useMemo(
+              () => ({
+                children: item.label,
+                side: "right" as const,
+                className: "font-body",
+              }),
+              [item.label]
+            );
+
+            return (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
+                  tooltip={tooltipProps}
+                >
+                  <Link href={item.href}>
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-4">
@@ -78,7 +99,7 @@ export function AppSidebar() {
          <SidebarMenuButton
             asChild
             isActive={pathname === "/settings"}
-            tooltip={{ children: "Settings", side: "right", className: "font-body" }}
+            tooltip={settingsTooltipProps}
           >
             <Link href="/settings">
               <Settings className="h-5 w-5" />
